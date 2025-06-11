@@ -1,2 +1,3 @@
-mod opcodes;
-mod data_word;
+pub mod opcodes;
+pub mod data_word;
+pub mod command_word;
