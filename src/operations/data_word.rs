@@ -4,6 +4,7 @@ const MAX_DATA_POS: i32 = (2^30) - 1;
 #[warn(dead_code)]
 const MAX_DATA_NEG: i32 = 2^30 * -1;
 
+#[derive(Debug)]
 pub struct DataWord {
     data: i32,
     pub is_negative: bool,
