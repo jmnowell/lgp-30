@@ -10,7 +10,7 @@ pub enum Opcode {
 }
 
 #[derive(Debug)]
-enum OpcodeError {
+pub enum OpcodeError {
     ToU8Failed,
     FromU8Failed,
     ToCharFailed,
@@ -43,28 +43,25 @@ impl TryFrom<u8> for Opcode {
     }
 }
 
-impl TryInto<u8> for Opcode {
-    type Error = OpcodeError;
-
-    fn try_into(self) -> Result<u8, Self::Error> {
+impl Into<u8> for Opcode {
+    fn into(self) -> u8 {
         match self {
-            Opcode::Bring => Ok(1),
-            Opcode::Hold => Ok(12),
-            Opcode::Clear => Ok(13),
-            Opcode::StoreAddress => Ok(2),
-            Opcode::UncondTransfer => Ok(10),
-            Opcode::ReturnAddress => Ok(3),
-            Opcode::Test => Ok(11),
-            Opcode::Stop => Ok(0),
-            Opcode::Print => Ok(8),
-            Opcode::Input => Ok(4),
-            Opcode::Add => Ok(14),
-            Opcode::Subtract => Ok(15),
-            Opcode::MultTopHalf => Ok(7),
-            Opcode::MultLowHalf => Ok(6),
-            Opcode::Divide => Ok(5),
-            Opcode::Extract => Ok(9),
-            _ => Err(OpcodeError::ToU8Failed)
+            Opcode::Bring => 1,
+            Opcode::Hold => 12,
+            Opcode::Clear => 13,
+            Opcode::StoreAddress => 2,
+            Opcode::UncondTransfer => 10,
+            Opcode::ReturnAddress => 3,
+            Opcode::Test => 11,
+            Opcode::Stop => 0,
+            Opcode::Print => 8,
+            Opcode::Input => 4,
+            Opcode::Add => 14,
+            Opcode::Subtract => 15,
+            Opcode::MultTopHalf => 7,
+            Opcode::MultLowHalf => 6,
+            Opcode::Divide => 5,
+            Opcode::Extract => 9,
         }
     }
 }

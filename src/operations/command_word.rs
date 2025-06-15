@@ -1,6 +1,6 @@
 
 use crate::operations::opcodes::Opcode;
-use crate::hardware::memory_drum::{MAX_TRACK, MAX_SECTOR}
+use crate::hardware::memory_drum::{MAX_TRACK, MAX_SECTOR};
 
 #[derive(Debug)]
 struct CommandWord {
@@ -9,7 +9,7 @@ struct CommandWord {
     sector: u8,
 }
 
-enum CommandWordError {
+pub enum CommandWordError {
     OpcodeDecodeFailed,
     TrackDecodeFailed,
     SectorDecodeFailed,
@@ -68,6 +68,24 @@ impl TryFrom<i32> for CommandWord {
             Err(_) => return Err(CommandWordError::OpcodeDecodeFailed),
             Ok(opcode) => Ok(CommandWord::new(opcode, track as u8, sector as u8).unwrap())
         }
+    }
+}
+
+impl Into<i32> for CommandWord {
+    fn into(self) -> i32 {
+        let opcode:u8 = self.opcode.into();
+        let mut result = 0;
+        result = result | opcode as i32;
+        result = result << 16;
+
+        let mut track = self.track as i32;
+        let mut sector = self.track as i32;
+        track = track << 9;
+        sector = sector << 2;
+
+        result = result | track;
+        result = result | sector;
+        result
     }
 }
 
