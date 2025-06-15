@@ -10,19 +10,67 @@ pub enum Opcode {
 }
 
 #[derive(Debug)]
-pub struct OpcodeFromCharError {
-    pub input: char,
-    pub message: String,
+enum OpcodeError {
+    ToU8Failed,
+    FromU8Failed,
+    ToCharFailed,
+    FromCharFailed,
 }
 
-impl fmt::Display for OpcodeFromCharError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Invalid opcode as char '{}': {}", self.input, self.message)
+impl TryFrom<u8> for Opcode {
+    type Error = OpcodeError;
+
+    fn try_from(val: u8) -> Result<Self, Self::Error> {
+        match val {
+            1 => Ok(Self::Bring),
+            12 => Ok(Self::Hold),
+            13 => Ok(Self::Clear),
+            2 => Ok(Self::StoreAddress),
+            10 => Ok(Self::UncondTransfer),
+            3 => Ok(Self::ReturnAddress),
+            11 => Ok(Self::Test),
+            0 => Ok(Self::Stop),
+            8 => Ok(Self::Print),
+            4 => Ok(Self::Input),
+            14 => Ok(Self::Add),
+            15 => Ok(Self::Subtract),
+            7 => Ok(Self::MultTopHalf),
+            6 => Ok(Self::MultLowHalf),
+            5 => Ok(Self::Divide),
+            9 => Ok(Self::Extract),
+            _ => Err(OpcodeError::FromU8Failed),
+        }
+    }
+}
+
+impl TryInto<u8> for Opcode {
+    type Error = OpcodeError;
+
+    fn try_into(self) -> Result<u8, Self::Error> {
+        match self {
+            Opcode::Bring => Ok(1),
+            Opcode::Hold => Ok(12),
+            Opcode::Clear => Ok(13),
+            Opcode::StoreAddress => Ok(2),
+            Opcode::UncondTransfer => Ok(10),
+            Opcode::ReturnAddress => Ok(3),
+            Opcode::Test => Ok(11),
+            Opcode::Stop => Ok(0),
+            Opcode::Print => Ok(8),
+            Opcode::Input => Ok(4),
+            Opcode::Add => Ok(14),
+            Opcode::Subtract => Ok(15),
+            Opcode::MultTopHalf => Ok(7),
+            Opcode::MultLowHalf => Ok(6),
+            Opcode::Divide => Ok(5),
+            Opcode::Extract => Ok(9),
+            _ => Err(OpcodeError::ToU8Failed)
+        }
     }
 }
 
 impl TryFrom<char> for Opcode {
-    type Error = OpcodeFromCharError;
+    type Error = OpcodeError;
 
     fn try_from(val: char) -> Result<Self, Self::Error> {
         let upper = val.to_uppercase().next().unwrap();
@@ -44,9 +92,7 @@ impl TryFrom<char> for Opcode {
             'Z' => Ok(Self::Stop),
             'P' => Ok(Self::Print),
             'I' => Ok(Self::Input),
-            _ => Err(OpcodeFromCharError { 
-                input: val, 
-                message: "not a valid opcode".into()})
+            _ => Err(OpcodeError::FromCharFailed),
         }
     }
 }

@@ -1,8 +1,4 @@
-#[warn(dead_code)]
-const MAX_DATA_POS: i32 = (2^30) - 1;
-
-#[warn(dead_code)]
-const MAX_DATA_NEG: i32 = 2^30 * -1;
+use crate::hardware::memory_drum::{MAX_POS_DATA, MAX_NEG_DATA};
 
 #[derive(Debug)]
 pub struct DataWord {
@@ -11,14 +7,13 @@ pub struct DataWord {
 }
 
 fn check_data(data: &i32) -> bool {
-    if *data > MAX_DATA_POS || *data < MAX_DATA_NEG {
+    if *data > MAX_POS_DATA || *data < MAX_NEG_DATA {
         return false;
     }
 
     true
 }
 
- 
 impl DataWord {
     pub fn new(data: i32) -> Result<Self, String> {
         if !check_data(&data) {
@@ -26,8 +21,8 @@ impl DataWord {
                 format!(
                     "{} does not fit into memory. Max size: {}, Min size: {}",
                     data, 
-                    MAX_DATA_POS, 
-                    MAX_DATA_NEG)
+                    MAX_POS_DATA, 
+                    MAX_NEG_DATA)
             );
         }
 
@@ -40,7 +35,7 @@ impl DataWord {
     pub fn set_data(&mut self, data: i32) -> bool {
         // Check if the data is between the values 
         // of 2^30 and (2^30)-1
-        if data > MAX_DATA_POS || data < MAX_DATA_NEG {
+        if data > MAX_POS_DATA || data < MAX_NEG_DATA {
             return false;
         }
 
