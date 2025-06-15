@@ -1,8 +1,6 @@
 
-use std::process::Command;
-
 use crate::operations::opcodes::Opcode;
-use crate::hardware::memory_drum::MAX_SECTOR as MAX_TRACK_SECTOR;
+use crate::hardware::memory_drum::{MAX_TRACK, MAX_SECTOR}
 
 #[derive(Debug)]
 struct CommandWord {
@@ -16,10 +14,6 @@ enum CommandWordError {
     TrackDecodeFailed,
     SectorDecodeFailed,
     EncodeFailed,
-}
-
-fn track_sector_ok(val: u8) -> bool {
-    val <= MAX_TRACK_SECTOR
 }
 
 impl TryFrom<i32> for CommandWord {
@@ -43,27 +37,51 @@ impl TryFrom<i32> for CommandWord {
         //
         //  If all three are valid, we have a valid Command Word
         //  and can decode it.
-        let opcode = val & opcode_mask; 
-        let track = val & track_mask;
-        let sector = val & sector_mask;
-        
+        let opcode = val & opcode_mask >> 16;
+        let track = val & track_mask >> 9;
+        let sector = val & sector_mask >> 2;
+
+        if track > u8::MAX as i32 {
+            return Err(CommandWordError::TrackDecodeFailed);
+        }
+
+        if track > MAX_TRACK as i32 {
+            return Err(CommandWordError::TrackDecodeFailed);
+        }
+
+        if sector > u8::MAX as i32 {
+            return Err(CommandWordError::SectorDecodeFailed);
+        }
+
+        if sector > MAX_SECTOR as i32 {
+            return Err(CommandWordError::SectorDecodeFailed);
+        }
+
+        if opcode > u8::MAX as i32 {
+            return Err(CommandWordError::OpcodeDecodeFailed);
+        }
+
+        // opcode is less than the max size of u8
+        let opcode_result = Opcode::try_from(opcode as u8);
+
+        match opcode_result {
+            Err(_) => return Err(CommandWordError::OpcodeDecodeFailed),
+            Ok(opcode) => Ok(CommandWord::new(opcode, track as u8, sector as u8).unwrap())
+        }
     }
 }
 
 impl CommandWord {
     pub fn new(opcode: Opcode, track: u8, sector: u8) -> Result<Self, String> {
-        let track_ok = track_sector_ok(track);
-        let sector_ok = track_sector_ok(sector);
-
-        if !track_ok {
+        if track > MAX_TRACK {
             return Err(
-                format!("Track is too large.  Max size: {}", MAX_TRACK_SECTOR)
+                format!("Track is too large.  Max size: {}", MAX_TRACK)
             );
         }
 
-        if !sector_ok {
+        if sector > MAX_SECTOR {
             return Err(
-                format!("Sectors is too large. Max size {}", MAX_TRACK_SECTOR)
+                format!("Sectors is too large. Max size {}", MAX_TRACK)
             );
         }
 
