@@ -3,7 +3,7 @@ use crate::operations::opcodes::Opcode;
 use crate::hardware::memory_drum::{MAX_TRACK, MAX_SECTOR};
 
 #[derive(Debug)]
-struct CommandWord {
+pub struct CommandWord {
     opcode: Opcode,
     track: u8,
     sector: u8,
@@ -13,7 +13,6 @@ pub enum CommandWordError {
     OpcodeDecodeFailed,
     TrackDecodeFailed,
     SectorDecodeFailed,
-    EncodeFailed,
 }
 
 impl TryFrom<i32> for CommandWord {
@@ -37,23 +36,18 @@ impl TryFrom<i32> for CommandWord {
         //
         //  If all three are valid, we have a valid Command Word
         //  and can decode it.
+        //
+        //  Note: Due to the word layout, we'll have to bitshift
+        //        things around.
         let opcode = val & opcode_mask >> 16;
         let track = val & track_mask >> 9;
         let sector = val & sector_mask >> 2;
 
-        if track > u8::MAX as i32 {
+        if track > u8::MAX as i32 && track > MAX_TRACK as i32 {
             return Err(CommandWordError::TrackDecodeFailed);
         }
 
-        if track > MAX_TRACK as i32 {
-            return Err(CommandWordError::TrackDecodeFailed);
-        }
-
-        if sector > u8::MAX as i32 {
-            return Err(CommandWordError::SectorDecodeFailed);
-        }
-
-        if sector > MAX_SECTOR as i32 {
+        if sector > u8::MAX as i32 && sector > MAX_SECTOR as i32 {
             return Err(CommandWordError::SectorDecodeFailed);
         }
 
@@ -66,7 +60,8 @@ impl TryFrom<i32> for CommandWord {
 
         match opcode_result {
             Err(_) => return Err(CommandWordError::OpcodeDecodeFailed),
-            Ok(opcode) => Ok(CommandWord::new(opcode, track as u8, sector as u8).unwrap())
+            Ok(opcode) => Ok(
+                CommandWord::new(opcode, track as u8, sector as u8).unwrap())
         }
     }
 }
@@ -78,10 +73,8 @@ impl Into<i32> for CommandWord {
         result = result | opcode as i32;
         result = result << 16;
 
-        let mut track = self.track as i32;
-        let mut sector = self.track as i32;
-        track = track << 9;
-        sector = sector << 2;
+        let track = (self.track as i32) << 9;
+        let sector = (self.sector as i32) << 2;
 
         result = result | track;
         result = result | sector;

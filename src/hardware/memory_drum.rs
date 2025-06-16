@@ -1,15 +1,15 @@
 // From the LGP-30 manual
 // There are 64 tracks, which are comprised of 64 sectors,
 // giving us 4096 words of instructions/data we can use
-pub const MAX_TRACK: u8 = 64;
-pub const MAX_SECTOR: u8 = 64;
-pub const DRUM_SIZE: u16 = (MAX_TRACK as u16) * (MAX_SECTOR as u16);
+pub const MAX_TRACK: u8 = 63;
+pub const MAX_SECTOR: u8 = 63;
+pub const DRUM_SIZE: u16 = ((MAX_TRACK + 1) as u16) * ((MAX_SECTOR + 1) as u16);
 
 // The LGP had a funky memory architecure, were the leading bit
 // was a sign bit, followed by the 30 bits available to it, but the 
 // last bit was a spacer bit to denote a space between memory words.
-pub const MAX_POS_DATA: i32 = 2^30 - 1;
-pub const MAX_NEG_DATA: i32 = (2^30) * -1;
+pub const MAX_POS_DATA: i32 = 2^31 - 1;
+pub const MAX_NEG_DATA: i32 = (2^31) * -1;
 
 pub struct MemoryDrum {
     memory: [[i32; MAX_TRACK as usize]; MAX_SECTOR as usize],
@@ -55,6 +55,9 @@ impl MemoryDrum {
         Ok(self.memory[track as usize][sector as usize] == i32::MIN)
     }
 
+    // TODO: Add in timing here to simulate the access speed of the LGP-30.  Since 
+    //       the memory drum rotates, and the read head steps linearly, this isn't 
+    //       anywhere near as fast as modern computers.
     pub fn fetch_word(mut self, track: u8, sector: u8) -> Result<i32, MemoryError> {
         if track > MAX_TRACK {
             return Err(MemoryError::MaxTrackExceeded);
