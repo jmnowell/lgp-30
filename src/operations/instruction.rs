@@ -1,22 +1,17 @@
+use crate::common::error::*;
 
 use crate::operations::opcodes::Opcode;
-use crate::hardware::memory_drum::{MAX_TRACK, MAX_SECTOR};
+
 
 #[derive(Debug)]
-pub struct CommandWord {
+pub struct Instruction {
     opcode: Opcode,
-    track: u8,
-    sector: u8,
+    data_track: u8,
+    data_sector: u8,
 }
 
-pub enum CommandWordError {
-    OpcodeDecodeFailed,
-    TrackDecodeFailed,
-    SectorDecodeFailed,
-}
-
-impl TryFrom<i32> for CommandWord {
-    type Error = CommandWordError;
+impl TryFrom<i32> for Instruction {
+    type Error = crate::common::error::Error;
 
     fn try_from(val: i32) -> Result<Self, Self::Error> {
         let opcode_mask = 0x000F0000;
@@ -44,37 +39,35 @@ impl TryFrom<i32> for CommandWord {
         let sector = val & sector_mask >> 2;
 
         if track > u8::MAX as i32 && track > MAX_TRACK as i32 {
-            return Err(CommandWordError::TrackDecodeFailed);
+            return Err(Error::InstructionTrackDecodeFailedk);
         }
 
         if sector > u8::MAX as i32 && sector > MAX_SECTOR as i32 {
-            return Err(CommandWordError::SectorDecodeFailed);
+            return Err(Error::InstructionSectorDecodeFailed);
         }
 
         if opcode > u8::MAX as i32 {
-            return Err(CommandWordError::OpcodeDecodeFailed);
+            return Err(Error::InstructionOpcodeDecodeFailed);
         }
 
         // opcode is less than the max size of u8
-        let opcode_result = Opcode::try_from(opcode as u8);
-
-        match opcode_result {
-            Err(_) => return Err(CommandWordError::OpcodeDecodeFailed),
+        match Opcode::try_from(opcode as u8) {
+            Err(_) => return Err(InstructionError::OpcodeDecodeFailed),
             Ok(opcode) => Ok(
-                CommandWord::new(opcode, track as u8, sector as u8).unwrap())
+                Instruction::new(opcode, track as u8, sector as u8).unwrap())
         }
     }
 }
 
-impl Into<i32> for CommandWord {
+impl Into<i32> for Instruction {
     fn into(self) -> i32 {
         let opcode:u8 = self.opcode.into();
         let mut result = 0;
         result = result | opcode as i32;
         result = result << 16;
 
-        let track = (self.track as i32) << 9;
-        let sector = (self.sector as i32) << 2;
+        let track = (self.data_track as i32) << 9;
+        let sector = (self.data_sector as i32) << 2;
 
         result = result | track;
         result = result | sector;
@@ -82,7 +75,7 @@ impl Into<i32> for CommandWord {
     }
 }
 
-impl CommandWord {
+impl Instruction {
     pub fn new(opcode: Opcode, track: u8, sector: u8) -> Result<Self, String> {
         if track > MAX_TRACK {
             return Err(
@@ -97,10 +90,10 @@ impl CommandWord {
         }
 
         Ok(
-            CommandWord { 
+            Instruction{ 
                 opcode: opcode, 
-                track: track, 
-                sector: sector 
+                data_track: track, 
+                data_sector: sector 
             }
         ) 
     }
@@ -109,11 +102,11 @@ impl CommandWord {
         self.opcode
     }
 
-    pub fn get_track(self) -> u8 {
-        self.track
+    pub fn get_data_track(self) -> u8 {
+        self.data_track
     }
 
-    pub fn get_sector(self) -> u8 {
-        self.sector
+    pub fn get_data_sector(self) -> u8 {
+        self.data_sector
     }
 }

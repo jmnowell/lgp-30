@@ -1,0 +1,15 @@
+pub enum Error {
+    InvalidTrack,
+    InvalidSector,
+    Overflow,
+    DivideByZero,
+    BadDataInput,
+    InstructionDecodeFailed,
+    MemoryFetchFailed,
+    MemoryStoreFailed,
+    MaxTrackExceeded,
+    MaxSectorExceeded,
+    InstructionOpcodeFailed,
+    InstructionTrackDecodeFailed,
+    InstructionSectorDecodeFailed,
+}

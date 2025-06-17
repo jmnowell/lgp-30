@@ -1,27 +1,10 @@
-// From the LGP-30 manual
-// There are 64 tracks, which are comprised of 64 sectors,
-// giving us 4096 words of instructions/data we can use
-pub const MAX_TRACK: u8 = 63;
-pub const MAX_SECTOR: u8 = 63;
-pub const DRUM_SIZE: u16 = ((MAX_TRACK + 1) as u16) * ((MAX_SECTOR + 1) as u16);
-
-// The LGP had a funky memory architecure, were the leading bit
-// was a sign bit, followed by the 30 bits available to it, but the 
-// last bit was a spacer bit to denote a space between memory words.
-pub const MAX_POS_DATA: i32 = 2^31 - 1;
-pub const MAX_NEG_DATA: i32 = (2^31) * -1;
+use crate::common::constants::*;
+use crate::common::checks::*;
+use crate::common::error::*;
 
 pub struct MemoryDrum {
     memory: [[i32; MAX_TRACK as usize]; MAX_SECTOR as usize],
     head_loc: (u8, u8),
-}
-
-// MEMORY_NULL is defined as the Maxmium of i32
-// the maximum value of a memory 
-pub enum MemoryError {
-    MaxTrackExceeded,
-    MaxSectorExceeded,
-    UninitializedMemory
 }
 
 impl MemoryDrum {
@@ -32,45 +15,31 @@ impl MemoryDrum {
         }
     }
 
-    pub fn add_word(mut self, word: i32, track: u8, sector: u8) -> bool {
-        if track > MAX_TRACK || sector > MAX_SECTOR {
-            return false;
+    pub fn is_memory_null(self, track: u8, sector: u8) -> Result<bool, Error> {
+        match check_memory_loc(track, sector) {
+            Ok(_) => return Ok(self.memory[track as usize][sector as usize] == i32::MIN),
+            Err(e) => return Err(e),
         }
-
-        self.head_loc = (track, sector);
-        self.memory[track as usize][sector as usize] = word;
-        true
-    }
-
-    pub fn is_memory_null(self, track: u8, sector: u8) -> Result<bool, MemoryError> {
-        if track > MAX_TRACK {
-            return Err(MemoryError::MaxTrackExceeded);
-        }
-
-        if sector > MAX_SECTOR {
-            return Err(MemoryError::MaxTrackExceeded);
-        }
-
-        // check to see if the memory is equal to i32::MIN
-        Ok(self.memory[track as usize][sector as usize] == i32::MIN)
     }
 
     // TODO: Add in timing here to simulate the access speed of the LGP-30.  Since 
     //       the memory drum rotates, and the read head steps linearly, this isn't 
     //       anywhere near as fast as modern computers.
-    pub fn fetch_word(mut self, track: u8, sector: u8) -> Result<i32, MemoryError> {
-        if track > MAX_TRACK {
-            return Err(MemoryError::MaxTrackExceeded);
+    pub fn fetch(self, track: u8, sector: u8) -> Result<i32, Error> {
+        match check_memory_loc(track, sector) {
+            Ok(_) => return Ok(self.memory[track as usize][sector as usize]),
+            Err(e) => return Err(e),
         }
+    }
 
-        if sector > MAX_SECTOR {
-            return Err(MemoryError::MaxSectorExceeded);
+    pub fn store(mut self, word: i32, track: u8, sector: u8) -> Result<bool, Error> {
+        match check_memory_loc(track, sector) {
+            Ok(_) => {
+                self.head_loc = (track, sector);
+                self.memory[track as usize][sector as usize] = word;
+                return Ok(true);
+            },
+            Err(e) => return Err(e),
         }
-
-        self.head_loc = (track, sector);
-
-        Ok(
-            self.memory[track as usize][sector as usize]
-        )
     }
 }

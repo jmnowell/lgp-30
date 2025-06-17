@@ -1,16 +1,14 @@
-use crate::hardware::memory_drum::{MAX_TRACK, MAX_SECTOR, MAX_POS_DATA, MAX_NEG_DATA};
-use crate::operations::command_word::{CommandWord};
+use crate::hardware::memory_drum::*;
+use crate::operations::instruction::{CommandWord};
+use crate::operations::opcodes::Opcode;
 
 pub struct CounterRegister {
     track: u8,
     sector: u8,
 }
 
-pub enum RegisterError {
-    InvalidTrack,
-    InvalidSector,
-    Overflow,
-    DivideByZero,
+pub enum RegisterResult {
+    
 }
 
 impl CounterRegister {
@@ -18,13 +16,13 @@ impl CounterRegister {
         CounterRegister { track: 0, sector: 0 }
     }
 
-    pub fn new(track: u8, sector: u8) -> Result<Self, RegisterError> {
+    pub fn new(track: u8, sector: u8) -> Result<Self, RegisterResult> {
         if track > MAX_TRACK {
-            return Err(RegisterError::InvalidTrack);
+            return Err(RegisterResult::InvalidTrack);
         }
 
         if sector > MAX_SECTOR {
-            return Err(RegisterError::InvalidSector);
+            return Err(RegisterResult::InvalidSector);
         }
 
         Ok(
@@ -40,18 +38,18 @@ impl CounterRegister {
         self.sector
     }
 
-    pub fn update(mut self, track: u8, sector: u8) -> bool {
+    pub fn update(mut self, track: u8, sector: u8) -> RegisterResult {
         if track > MAX_TRACK {
-            return false;
+            return RegisterResult::InvalidTrack;
         }
 
         if sector > MAX_SECTOR {
-            return false;
+            return RegisterResult::InvalidSector;
         }
 
         self.track = track;
         self.sector = sector;
-        true
+        RegisterResult::Ok
     }
 
     pub fn reset(mut self) {
@@ -74,74 +72,39 @@ impl InstructionRegister {
             ).unwrap() 
         }
     }
-}
 
-pub struct Accumulator {
-    accumulated_value: i32
-}
+    pub fn update(mut self, val: i32) -> RegisterResult {
+        let candidate_inst = CommandWord::try_from(value);
 
-impl Accumulator {
-    pub fn new() -> Self {
-        Accumulator { accumulated_value: 0 }
+        match candidate_inst {
+            Ok(ci) => {
+                self.instruction = ci;
+                return RegisterResult::Ok
+            },
+            Err(e) => {
+                return RegisterResult::InstructionDecodeFailed
+            }
+        }
     }
 
-    pub fn add(mut self, value: i32) -> bool {
-        if value > MAX_POS_DATA || value < MAX_NEG_DATA {
-            return false;
+    pub fn fetch_data(mut self, track: u8, sector: u8, memory: &MemoryDrum) -> Result<i32, RegisterResult> {
+        if track > MAX_TRACK {
+            return RegisterResult::InvalidTrack;
         }
 
-        self.accumulated_value += value;
-        true
+        if sector > MAX_SECTOR {
+            return RegisterResult::InvalidSector;
+        }
+
+        let word = memory.fetch_word(track, sector);
+
+        match word {
+            Ok(val) => return Ok(val),
+            Err(e) => return Err(RegisterResult::MemoryFetchFailed),
+        }
     }
 
-    pub fn hi_mult(mut self, value: i32) -> bool {
-        if value > MAX_POS_DATA || value < MAX_NEG_DATA {
-            return false;
-        }
-
-        let result: i64 = (self.accumulated_value * value).into();
-        let result: i32 = ((result & 0xEFFFFFFF00000000) >> 32).try_into().unwrap();
-
-
-        self.accumulated_value *= value;
-        true
-    }
-
-    pub fn divide(mut self, value: i32) -> Result<bool, RegisterError> {
-        if value > MAX_POS_DATA || value < MAX_NEG_DATA {
-            return Err(RegisterError::Overflow);
-        }
-
-        if value == 0 {
-            return Err(RegisterError::DivideByZero);
-        }
-
-        let result = self.accumulated_value / value;
-
-        // test to make sure we don't have an overflow
-        if result > MAX_POS_DATA || result < MAX_NEG_DATA {
-            return Err(RegisterError::Overflow)
-        }
-
-        // result is valid
-        self.accumulated_value = result;
-        Ok(true)
-    }
-
-    pub fn clear(mut self) {
-        self.accumulated_value = 0;
-    }
-
-    pub fn load(mut self, value: i32) -> bool {
-        if value > MAX_POS_DATA || value < MAX_NEG_DATA {
-            return false;
-        }
-
-        self.accumulated_value = value;
-        true
-    }
-
-    pub fn store(self) -> i32 {
-        self.accumulated_value
+    pub fn opcode(self) -> Opcode {
+        self.instruction.get_opcode()
     }
 }
