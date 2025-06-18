@@ -1,6 +1,6 @@
-use crate::hardware::memory_drum::{MAX_POS_DATA, MAX_NEG_DATA};
+use crate::common::constants::{MAX_POS_DATA, MAX_NEG_DATA};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct DataWord {
     data: i32,
     pub is_negative: bool,

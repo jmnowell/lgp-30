@@ -1,3 +1,4 @@
+#[derive(Debug, Clone, Copy)]
 pub enum Error {
     InvalidTrack,
     InvalidSector,
@@ -9,7 +10,7 @@ pub enum Error {
     MemoryStoreFailed,
     MaxTrackExceeded,
     MaxSectorExceeded,
-    InstructionOpcodeFailed,
+    InstructionOpcodeDecodeFailed,
     InstructionTrackDecodeFailed,
     InstructionSectorDecodeFailed,
 }

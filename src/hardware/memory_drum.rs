@@ -25,19 +25,19 @@ impl MemoryDrum {
     // TODO: Add in timing here to simulate the access speed of the LGP-30.  Since 
     //       the memory drum rotates, and the read head steps linearly, this isn't 
     //       anywhere near as fast as modern computers.
-    pub fn fetch(self, track: u8, sector: u8) -> Result<i32, Error> {
+    pub fn fetch(&self, track: u8, sector: u8) -> Result<i32, Error> {
         match check_memory_loc(track, sector) {
             Ok(_) => return Ok(self.memory[track as usize][sector as usize]),
             Err(e) => return Err(e),
         }
     }
 
-    pub fn store(mut self, word: i32, track: u8, sector: u8) -> Result<bool, Error> {
+    pub fn store(&mut self, word: i32, track: u8, sector: u8) -> Result<(), Error> {
         match check_memory_loc(track, sector) {
             Ok(_) => {
                 self.head_loc = (track, sector);
                 self.memory[track as usize][sector as usize] = word;
-                return Ok(true);
+                return Ok(())
             },
             Err(e) => return Err(e),
         }

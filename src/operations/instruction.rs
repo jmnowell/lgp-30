@@ -1,9 +1,10 @@
+use crate::common::constants::*;
+use crate::common::checks::{is_sector_valid, is_track_valid};
 use crate::common::error::*;
-
 use crate::operations::opcodes::Opcode;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Instruction {
     opcode: Opcode,
     data_track: u8,
@@ -11,7 +12,7 @@ pub struct Instruction {
 }
 
 impl TryFrom<i32> for Instruction {
-    type Error = crate::common::error::Error;
+    type Error = Error;
 
     fn try_from(val: i32) -> Result<Self, Self::Error> {
         let opcode_mask = 0x000F0000;
@@ -39,7 +40,7 @@ impl TryFrom<i32> for Instruction {
         let sector = val & sector_mask >> 2;
 
         if track > u8::MAX as i32 && track > MAX_TRACK as i32 {
-            return Err(Error::InstructionTrackDecodeFailedk);
+            return Err(Error::InstructionTrackDecodeFailed);
         }
 
         if sector > u8::MAX as i32 && sector > MAX_SECTOR as i32 {
@@ -50,12 +51,9 @@ impl TryFrom<i32> for Instruction {
             return Err(Error::InstructionOpcodeDecodeFailed);
         }
 
-        // opcode is less than the max size of u8
-        match Opcode::try_from(opcode as u8) {
-            Err(_) => return Err(InstructionError::OpcodeDecodeFailed),
-            Ok(opcode) => Ok(
-                Instruction::new(opcode, track as u8, sector as u8).unwrap())
-        }
+        Opcode::try_from(opcode as u8)
+            .map_err(|_e| Error::InstructionOpcodeDecodeFailed)
+            .map(|o| Instruction::new(o, track as u8, sector as u8).unwrap())
     }
 }
 
@@ -76,17 +74,13 @@ impl Into<i32> for Instruction {
 }
 
 impl Instruction {
-    pub fn new(opcode: Opcode, track: u8, sector: u8) -> Result<Self, String> {
-        if track > MAX_TRACK {
-            return Err(
-                format!("Track is too large.  Max size: {}", MAX_TRACK)
-            );
+    pub fn new(opcode: Opcode, track: u8, sector: u8) -> Result<Self, Error> {
+        if !is_track_valid(track) {
+            return Err(Error::MaxTrackExceeded);
         }
 
-        if sector > MAX_SECTOR {
-            return Err(
-                format!("Sectors is too large. Max size {}", MAX_TRACK)
-            );
+        if !is_sector_valid(sector) {
+            return Err(Error::MaxSectorExceeded);
         }
 
         Ok(
@@ -98,15 +92,15 @@ impl Instruction {
         ) 
     }
 
-    pub fn get_opcode(self) -> Opcode {
+    pub fn opcode(self) -> Opcode {
         self.opcode
     }
 
-    pub fn get_data_track(self) -> u8 {
+    pub fn data_track(self) -> u8 {
         self.data_track
     }
 
-    pub fn get_data_sector(self) -> u8 {
+    pub fn data_sector(self) -> u8 {
         self.data_sector
     }
 }

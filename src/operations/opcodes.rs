@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Opcode {
     Bring, Add, Subtract, Hold, Clear,              // Arthimetic Opcodes
     Extract, Divide, MultTopHalf, MultLowHalf,      // 
@@ -12,6 +12,7 @@ pub enum OpcodeError {
     FromU8Failed,
     FromCharFailed,
 }
+
 
 impl TryFrom<u8> for Opcode {
     type Error = OpcodeError;
