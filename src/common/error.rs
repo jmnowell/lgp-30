@@ -14,4 +14,6 @@ pub enum Error {
     InstructionTrackDecodeFailed,
     InstructionSectorDecodeFailed,
     InvalidData,
+    OpcodeFromU8Failed,
+    OpcodeFromCharFailed,
 }

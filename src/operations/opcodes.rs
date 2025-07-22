@@ -1,3 +1,4 @@
+use crate::common::error::{Error};
 #[derive(Debug, Copy, Clone)]
 pub enum Opcode {
     Bring, Add, Subtract, Hold, Clear,              // Arthimetic Opcodes
@@ -7,15 +8,8 @@ pub enum Opcode {
     Print, Input                                    // I/O Opcodes
 }
 
-#[derive(Debug)]
-pub enum OpcodeError {
-    FromU8Failed,
-    FromCharFailed,
-}
-
-
 impl TryFrom<u8> for Opcode {
-    type Error = OpcodeError;
+    type Error = Error;
 
     fn try_from(val: u8) -> Result<Self, Self::Error> {
         match val {
@@ -35,7 +29,7 @@ impl TryFrom<u8> for Opcode {
             13 => Ok(Self::Clear),
             14 => Ok(Self::Add),
             15 => Ok(Self::Subtract),
-            _ => Err(OpcodeError::FromU8Failed),
+            _ => Err(Error::OpcodeFromU8Failed),
         }
     }
 }
@@ -64,7 +58,7 @@ impl Into<u8> for Opcode {
 }
 
 impl TryFrom<char> for Opcode {
-    type Error = OpcodeError;
+    type Error = Error;
 
     fn try_from(val: char) -> Result<Self, Self::Error> {
         let upper = val.to_uppercase().next().unwrap();
@@ -86,7 +80,7 @@ impl TryFrom<char> for Opcode {
             'Z' => Ok(Self::Stop),
             'P' => Ok(Self::Print),
             'I' => Ok(Self::Input),
-            _ => Err(OpcodeError::FromCharFailed),
+            _ => Err(Error::OpcodeFromCharFailed),
         }
     }
 }
