@@ -16,4 +16,5 @@ pub enum Error {
     InvalidData,
     OpcodeFromU8Failed,
     OpcodeFromCharFailed,
+    LexerReadFailed,
 }
